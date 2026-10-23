@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#123f38">
+  <meta name="description" content="Give your everyday life the big-screen treatment. Create a movie title, tagline and shareable poster with INVISDOM.">
+  <meta property="og:title" content="Your Life as a Movie · INVISDOM">
+  <meta property="og:description" content="One ordinary day. One extraordinary movie. What would yours be called?">
+  <title>Your Life as a Movie · INVISDOM</title>
+  <link rel="stylesheet" href="movie.css">
+  <script src="config.js" defer></script>
+  <script src="movie.js" type="module"></script>
+</head>
+<body>
+<header class="topbar"><a class="brand" href="../"><span class="brand-mark" aria-hidden="true">✦</span> INVISDOM<span class="brand-ai">AI</span></a><a class="back-link" href="../">Try the food game <span aria-hidden="true">↗</span></a></header>
+<main>
+  <section class="intro" aria-labelledby="page-title">
+    <div class="intro-copy"><p class="eyebrow"><span class="dot"></span> THE INVISDOM PICTURE HOUSE · VOL. 02</p><h1 id="page-title">Your life.<br>A <em>little more</em><br>cinematic.</h1><p class="intro-text">The commute. The chaos. That third cup of coffee.<br>Every day has a story. Let’s give yours a movie title.</p><a class="jump-link" href="#studio">Take the director’s seat <span aria-hidden="true">↓</span></a><div class="intro-foot"><span>NO OSCAR REQUIRED</span><span>JUST MAIN-CHARACTER ENERGY</span></div></div>
+    <div class="hero-art" aria-label="Example movie poster: Deadline Dubai"><div class="art-caption">AN ORDINARY DAY, REIMAGINED.</div><div class="poster sample-poster"><div class="poster-top"><span>INVISDOM PICTURES</span><span class="poster-stamp">SAMPLE</span></div><div class="poster-orbit"><div class="sun"></div><div class="skyline"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="orbit-line"></div></div><div class="poster-name">STARRING MOHAMED ASHIF</div><div class="poster-bottom"><p class="poster-genre">CORPORATE SURVIVAL COMEDY</p><h2>DEADLINE:<br><span>DUBAI.</span></h2><p class="poster-tagline">One man. Twelve tasks.<br>Three cups of karak.</p><div class="poster-rule"></div><div class="poster-credit">A FILM BY LIFE ITSELF <span>ONLY AT INVISDOM</span></div></div></div><div class="ticket"><span class="ticket-number">02</span><div>YOUR EVERYDAY EPIC<small>ADMIT ONE MAIN CHARACTER</small></div><span class="ticket-icon" aria-hidden="true">✦</span></div></div>
+  </section>
+  <section class="studio" id="studio" aria-labelledby="studio-title">
+    <div class="studio-heading"><div><p class="eyebrow">LIGHTS. CAMERA. YOU.</p><h2 id="studio-title">Let’s write your opening scene.</h2></div><span class="mode-badge" id="mode-badge">INTERACTIVE PREVIEW</span></div>
+    <div class="workspace">
+      <form id="movie-form" class="form-card">
+        <label class="field-label" for="first-name"><span class="field-number">01</span> What should we call our star?</label><input id="first-name" name="name" maxlength="40" placeholder="Your first name" autocomplete="given-name" required>
+        <fieldset><legend class="field-label"><span class="field-number">02</span> What’s the mood today?</legend><div class="mood-grid"><label><input type="radio" name="mood" value="chaotic" checked><span><b aria-hidden="true">↯</b> Chaotic</span></label><label><input type="radio" name="mood" value="ambitious"><span><b aria-hidden="true">↗</b> Ambitious</span></label><label><input type="radio" name="mood" value="tired"><span><b aria-hidden="true">☾</b> Tired</span></label><label><input type="radio" name="mood" value="joyful"><span><b aria-hidden="true">☀</b> Joyful</span></label><label><input type="radio" name="mood" value="dreamy"><span><b aria-hidden="true">✧</b> Dreamy</span></label><label><input type="radio" name="mood" value="determined"><span><b aria-hidden="true">✦</b> Determined</span></label></div></fieldset>
+        <label class="field-label" for="day"><span class="field-number">03</span> Give us the plot, in one sentence.</label><textarea id="day" name="day" rows="3" minlength="8" maxlength="360" placeholder="Missed my alarm, survived five meetings, and still made time for karak." required aria-describedby="day-help"></textarea><div class="field-help"><span id="day-help">Keep it light. Leave out private details.</span><span id="char-count">0 / 360</span></div>
+        <p class="privacy" id="privacy">Preview mode: sample writing is created in your browser. Your entries are not sent anywhere. AI generation is not connected yet.</p>
+        <button class="primary" id="generate" type="submit"><span id="generate-label">Make a sample poster</span><span aria-hidden="true">↗</span></button><p class="form-status" id="form-status" role="status" aria-live="polite"></p>
+      </form>
+      <aside class="result-card" id="result" aria-label="Your movie poster">
+        <div class="result-empty" id="result-empty"><div class="clapper" aria-hidden="true"><div></div><span>TAKE 01</span></div><h3>Your name in lights.</h3><p>A title. A tagline. Your very own movie moment.<br>Fill in the scene and we’ll roll the credits.</p><span class="little-label">THE NEXT GREAT STORY IS YOURS.</span></div>
+        <div id="result-content" hidden><div class="result-heading"><span class="eyebrow" id="result-mode">SAMPLE POSTER</span><span class="take-label" id="take-label">TAKE 01</span></div><div class="poster generated-poster" id="generated-poster"><div class="poster-top"><span>INVISDOM PICTURES</span><span class="poster-stamp" id="poster-stamp">SAMPLE</span></div><div class="poster-orbit"><div class="sun"></div><div class="skyline"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="orbit-line"></div></div><div class="poster-name" id="poster-name"></div><div class="poster-bottom"><p class="poster-genre" id="poster-genre"></p><h2 id="poster-title"></h2><p class="poster-tagline" id="poster-tagline"></p><div class="poster-rule"></div><div class="poster-credit">A FILM BY LIFE ITSELF <span>INVISDOM · ASHIF-6644.GITHUB.IO</span></div></div></div><h3 class="story-label">THE STORY</h3><p class="story" id="story"></p><div class="result-actions"><button type="button" class="primary" id="download">Download poster <span aria-hidden="true">↓</span></button><button type="button" class="secondary" id="share">Share <span aria-hidden="true">↗</span></button></div><p class="share-help">Download the image for Instagram Stories. Share sends the poster where your device supports it.</p><p id="share-status" class="form-status" role="status" aria-live="polite"></p><details class="copy-fallback" id="copy-fallback" hidden><summary>Copy your movie text</summary><textarea id="copy-text" readonly aria-label="Movie text to copy"></textarea></details></div>
+      </aside>
+    </div>
+  </section>
+  <section class="closing"><p class="eyebrow">SMALL MOMENTS. BIG STORIES.</p><h2>You don’t need an extraordinary life<br>to have a great <em>story.</em></h2><a href="../">Explore your food personality <span aria-hidden="true">↗</span></a></section>
+</main>
+<footer><a class="brand" href="../">✦ INVISDOM</a><p>Created by Mohamed Ashif · <a href="https://www.instagram.com/invisible_startdom/" target="_blank" rel="noopener noreferrer">@invisible_startdom</a></p><span>A little imagination, for everyone.</span></footer>
+</body></html>
