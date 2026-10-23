@@ -1,30 +1,33 @@
-# INVISDOM movie AI activation
+# INVISDOM movie AI — Cloudflare Free
 
-The page at `movie/` is a working, explicitly labelled sample-poster preview until a private AI backend is deployed. Sample writing is template-based and stays in the browser. The sample mode does not call OpenAI.
+The AI backend now uses **Cloudflare Workers AI** through the account's `AI` binding. It uses `@cf/meta/llama-3.1-8b-instruct-fp8`; no OpenAI account or paid OpenAI API key is needed.
 
-GitHub Pages hosts only static files. The code in this directory is the private API service; it is not executed by GitHub Pages. Publishing these files does not enable AI generation.
+**Status:** the GitHub page remains a clearly labelled sample-poster preview until this Worker is deployed and its actual HTTPS URL is configured in `movie/config.js`. Updating this source alone does not activate AI.
 
-## Prepared backend
+## Stay on the free plan
 
-`worker.mjs` is a Cloudflare Worker with a SQLite-backed Durable Object for atomic request quotas. The browser sends first name, mood and scene by POST. The key stays in the Worker, and the response contains only the four validated movie fields.
+Use **Workers Free**. Cloudflare currently includes 10,000 AI Neurons per UTC day; the number of movie generations depends on token usage and other AI usage in the account. When the free allocation runs out, requests fail until the allowance resets. Do not upgrade to Workers Paid or enable a paid fallback to keep this app free. On an already-paid account, additional usage may be billable; verify the account plan before deployment.
 
-- `/api/movie`: POST and OPTIONS only; exact configured origin allowlist.
-- Maximum request body 4 KiB; first name 40 characters, scene 8–360 characters; six allowed moods.
-- One atomic global counter caps attempted AI calls at 100 per UTC day by default, with at most 5 per daily salted IP hash. Failed AI attempts also count. Quota failures stop generation.
-- The app stores only daily quota counts and salted IP hashes. Scenes, names and results are not stored or logged by this code. OpenAI receives the input; `store:false` disables Response object storage, but OpenAI's applicable API data-retention policies still apply. Cloudflare and OpenAI may process request metadata under their policies.
-- Responses are never cached. Provider errors and keys are not returned to visitors. No analytics, trackers or cookies are added.
-- CORS is a browser boundary, not authentication: non-browser clients can spoof Origin. The atomic global cap is the upper bound on accepted generation attempts. Set project-level API spend controls as well. All visitors share the daily cap, so deliberate misuse can exhaust it.
+## Activate
 
-## Connect the service
+1. Sign into your own Cloudflare account and confirm the Workers plan is **Free**. Account creation or new model licence acceptance must be completed by the account owner.
+2. Deploy `server/worker.mjs` with the official Wrangler CLI, using `server/wrangler.jsonc`. It declares both the Workers AI binding and the SQLite-backed `MovieQuota` Durable Object. Run the deployment from `server/` so the relative module import resolves to `movie/core.mjs` in this repository.
+3. Add a long random `RATE_LIMIT_SALT` as a Worker **secret**, using interactive secret entry or the Cloudflare dashboard. This protects the daily IP hashes. Do not put real secrets in GitHub, `config.js`, command arguments, or chat. No provider API key is used.
+4. Use the actual provider-assigned URL ending in `/api/movie` as `apiUrl` in `movie/config.js`. The URL is public configuration; credentials are never added to frontend code.
+5. Test real generation, bad input, limits, failures and mobile sharing. Confirm the page says **AI MOVIE STUDIO** and a new result says **YOUR AI MOVIE**. Until that is verified, describe the site as a sample preview.
 
-1. Use a Cloudflare account authorized for this app and deploy with the official Wrangler CLI from this directory. Add `OPENAI_API_KEY` and a long random `RATE_LIMIT_SALT` as **secrets**. Do not put them in GitHub, `config.js`, chat, or command arguments. Wrangler's interactive secret input or the provider's secret UI can be used.
-2. Review `wrangler.jsonc` quotas and model access before serving public requests. Its `gpt-4o-mini` default must be available to the OpenAI project. A funded API account may be required; ChatGPT subscriptions do not by themselves configure this service.
-3. Deploy the Worker and its `MovieQuota` SQLite migration. The `workers.dev` URL is assigned by the provider; do not guess it.
-4. In `movie/config.js`, set `apiUrl` to the deployed HTTPS URL ending in `/api/movie`. This file contains only the public endpoint, never a key. GitHub Pages will redeploy the static frontend.
-5. Test a real scene, rate limits, errors and sharing on the published page. Confirm the page says **AI MOVIE STUDIO** and the result says **YOUR AI MOVIE**, and that new takes are generated by the service. Do not describe the sample preview as live AI.
+## Behaviour and privacy
 
-## Local checks
+- The Worker accepts only POST and OPTIONS at `/api/movie` from the configured browser origin, `https://ashif-6644.github.io`.
+- Maximum request body: 4 KiB. First name: 40 characters. Scene: 8–360 characters. Six allowed moods.
+- One atomic singleton limits AI attempts to 100 per UTC day globally and 5 per salted daily IP hash by default. Failed generation attempts also count. Request quota failures stop generation.
+- Browser inputs are sent to Cloudflare Workers AI. This app does not store or log names, scenes or movie text. It stores only daily counters and salted daily IP hashes. Cloudflare's applicable service data policies and infrastructure metadata handling still apply.
+- AI JSON is validated before it is returned. There is one model call per accepted attempt; there are no automatic retries or paid-provider fallbacks. Provider details and private values are not returned to visitors. Responses are not cached.
+- Origin checks protect browsers; non-browser clients can spoof Origin. The global cap also limits abuse, though deliberate misuse can exhaust the shared allowance. Cloudflare's account-level daily free allocation applies independently.
+- GitHub Pages hosts only static files and never runs this Worker.
 
-Run `node --test tests/movie.test.mjs` from the repository root. Tests stub the provider and quota binding; they do not make paid AI calls. Browser QA is additionally needed for layout, PNG download and Web Share. Quota transactions must be verified in the deployed Cloudflare runtime before AI activation.
+## Checks
 
-References: [OpenAI Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs), [Cloudflare Durable Objects storage](https://developers.cloudflare.com/durable-objects/best-practices/access-durable-objects-storage/).
+Run `node --test tests/movie.test.mjs` from the repository root. Tests stub Workers AI and storage and cover successful output, invalid output, request quotas, daily free-limit errors, and provider failures. They do not call a real model. Verify bindings, transactional storage and account limits in Cloudflare before activation.
+
+Official references: [Workers AI pricing](https://developers.cloudflare.com/workers-ai/platform/pricing/), [AI binding](https://developers.cloudflare.com/workers-ai/configuration/bindings/), [Llama model](https://developers.cloudflare.com/workers-ai/models/llama-3.1-8b-instruct-fp8/), [JSON mode](https://developers.cloudflare.com/workers-ai/features/json-mode/).

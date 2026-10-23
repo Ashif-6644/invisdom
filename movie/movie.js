@@ -6,7 +6,7 @@ let current = null, take = 0, working = false;
 if (apiUrl) {
   $('mode-badge').textContent = 'AI MOVIE STUDIO';
   $('generate-label').textContent = 'Make my movie';
-  $('privacy').textContent = 'Your name, mood and scene are sent to OpenAI to create your movie. This app does not save your scene or result. Keep private details out of your scene.';
+  $('privacy').textContent = 'Your name, mood and scene are sent to Cloudflare Workers AI to create your movie. This app does not save your scene or result. Free daily limits apply. Keep private details out of your scene.';
 }
 $('day').addEventListener('input', () => { $('char-count').textContent = `${$('day').value.length} / 360`; });
 $('movie-form').addEventListener('submit', async event => {

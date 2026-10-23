@@ -23,7 +23,7 @@ async function readInput(request) {
   const bytes=new Uint8Array(size);let position=0;for(const chunk of chunks){bytes.set(chunk,position);position+=chunk.length;}
   return validateInput(JSON.parse(new TextDecoder().decode(bytes)));
 }
-export async function handleRequest(request, env, fetcher=fetch) {
+export async function handleRequest(request, env) {
   const origin=request.headers.get('Origin');
   const allowed=(env.ALLOWED_ORIGINS||'https://ashif-6644.github.io').split(',').map(x=>x.trim()).filter(Boolean);
   if(!origin||!allowed.includes(origin))return response({error:'Origin not allowed'},403,null);
@@ -31,7 +31,7 @@ export async function handleRequest(request, env, fetcher=fetch) {
   if(request.method==='OPTIONS')return new Response(null,{status:204,headers:{'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Methods':'POST, OPTIONS','Access-Control-Allow-Headers':'Content-Type','Access-Control-Max-Age':'600','Vary':'Origin'}});
   if(request.method!=='POST')return response({error:'Method not allowed'},405,origin,{Allow:'POST, OPTIONS'});
   let input;try {input=await readInput(request);}catch{return response({error:'Invalid name, mood or scene'},400,origin);}
-  if(!env.OPENAI_API_KEY||!env.RATE_LIMIT_SALT||!env.MOVIE_QUOTA)return response({error:'Studio not configured'},503,origin);
+  if(!env.AI?.run||!env.RATE_LIMIT_SALT||!env.MOVIE_QUOTA)return response({error:'Studio not configured'},503,origin);
   const ip=request.headers.get('CF-Connecting-IP');
   if(!ip)return response({error:'Quota identity unavailable'},503,origin);
   const day=new Date().toISOString().slice(0,10);
@@ -45,16 +45,19 @@ export async function handleRequest(request, env, fetcher=fetch) {
   }catch{return response({error:'Studio temporarily unavailable'},503,origin);}
   if(!quota.allowed)return response({error:'Daily request limit reached'},429,origin,{'Retry-After':'3600'});
   try {
-    const result=await fetcher('https://api.openai.com/v1/responses',{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${env.OPENAI_API_KEY}`},signal:AbortSignal.timeout(28000),body:JSON.stringify({model:env.OPENAI_MODEL||'gpt-4o-mini',store:false,instructions,input:JSON.stringify(input),max_output_tokens:600,text:{format:{type:'json_schema',name:'movie',strict:true,schema}}})});
-    if(!result.ok)return response({error:'AI service unavailable'},result.status===429?429:502,origin);
-    const data=await result.json();
-    const content=(data.output||[]).filter(x=>x.type==='message').flatMap(x=>x.content||[]);
-    if(content.some(x=>x.type==='refusal'))return response({error:'Please try a different everyday scene'},422,origin);
-    if(data.status!=='completed')return response({error:'Incomplete movie response'},502,origin);
-    const text=content.filter(x=>x.type==='output_text').map(x=>x.text).join('');
-    const movie=validateMovie(JSON.parse(text));
+    // The AI binding belongs to this Cloudflare account; no provider API key is used.
+    const data=await env.AI.run(env.AI_MODEL||'@cf/meta/llama-3.1-8b-instruct-fp8',{
+      messages:[{role:'system',content:instructions},{role:'user',content:JSON.stringify(input)}],
+      response_format:{type:'json_schema',json_schema:schema},max_tokens:600,temperature:0.85,stream:false
+    });
+    // Depending on JSON mode, Workers AI returns a structured object or JSON string.
+    const raw=data?.response;
+    const movie=validateMovie(typeof raw==='string'?JSON.parse(raw):raw);
     return response({movie},200,origin);
-  } catch {return response({error:'AI service unavailable'},502,origin);}
+  } catch(error) {
+    const limited=Number(error?.status)===429||Number(error?.code)===3036;
+    return response({error:limited?'Free AI allowance reached. Please try again later.':'AI service unavailable'},limited?429:502,origin);
+  }
 }
 export default {fetch(request, env) { return handleRequest(request, env); }};
 

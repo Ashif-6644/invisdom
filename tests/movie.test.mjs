@@ -7,8 +7,8 @@ const input={name:'Ashif',mood:'chaotic',day:'Five meetings and finally a quiet 
 const movie={title:'The Karak Clause',genre:'Workday Comedy',tagline:'Five meetings. One very important tea break.',storyline:'Ashif navigates a busy day with a little wit and a perfectly timed cup of karak.'};
 const origin='https://ashif-6644.github.io';
 function req(value=input,options={}) {return new Request('https://studio.example/api/movie',{method:'POST',headers:{Origin:origin,'Content-Type':'application/json','CF-Connecting-IP':'192.0.2.4',...options.headers},body:typeof value==='string'?value:JSON.stringify(value),...options});}
-function env(allowed=true){return {OPENAI_API_KEY:'test-only-not-a-real-key',RATE_LIMIT_SALT:'test-only-salt',MOVIE_QUOTA:{idFromName:()=>1,get:()=>({fetch:async()=>Response.json({allowed})})}};}
-const ai=async()=>Response.json({status:'completed',output:[{type:'message',content:[{type:'output_text',text:JSON.stringify(movie)}]}]});
+const ai=async()=>({response:JSON.stringify(movie)});
+function env(allowed=true,run=ai){return {AI:{run},RATE_LIMIT_SALT:'test-only-salt',MOVIE_QUOTA:{idFromName:()=>1,get:()=>({fetch:async()=>Response.json({allowed})})}};}
 test('all moods produce labelled sample-compatible writing and new takes',()=>{
  for(const mood of MOODS){const a=validateMovie(sampleMovie({...input,mood},0)),b=validateMovie(sampleMovie({...input,mood},1));assert.notEqual(a.title,b.title);assert.ok(a.storyline.includes(input.name));assert.ok(a.storyline.includes(input.day));}
  assert.match(shareText(movie,'Ashif','https://example.test/',true),/sample movie poster/);
@@ -20,37 +20,38 @@ test('reject whitespace, overlong values, wrong moods, invalid response fields',
 test('API rejects other origins and unconfigured service without provider calls',async()=>{
  let calls=0;const provider=async()=>{calls++;return ai()};
  const denied=new Request('https://studio.example/api/movie',{method:'POST',headers:{Origin:'https://unrelated.example','Content-Type':'application/json'},body:JSON.stringify(input)});
- assert.equal((await handleRequest(denied,env(),provider)).status,403);
- assert.equal((await handleRequest(req(),{},provider)).status,503);assert.equal(calls,0);
+ assert.equal((await handleRequest(denied,env(true,provider))).status,403);
+ assert.equal((await handleRequest(req(),{})).status,503);assert.equal(calls,0);
 });
 test('preflight and incorrect methods and invalid/oversize bodies',async()=>{
  const pre=new Request('https://studio.example/api/movie',{method:'OPTIONS',headers:{Origin:origin}});
  assert.equal((await handleRequest(pre,{})).status,204);
  const get=new Request('https://studio.example/api/movie',{headers:{Origin:origin}});
  assert.equal((await handleRequest(get,{})).status,405);
- for(const data of ['not JSON',{...input,name:' '},'x'.repeat(5000)])assert.equal((await handleRequest(req(data),env(),ai)).status,400);
+ for(const data of ['not JSON',{...input,name:' '},'x'.repeat(5000)])assert.equal((await handleRequest(req(data),env())).status,400);
 });
-test('AI output is validated and secrets stay server-side',async()=>{
- let sent;
- const result=await handleRequest(req(),env(),async(url,options)=>{assert.equal(url,'https://api.openai.com/v1/responses');sent=JSON.parse(options.body);return ai();});
- assert.equal(result.status,200);assert.deepEqual(await result.json(),{movie});assert.equal(sent.store,false);assert.equal(sent.text.format.type,'json_schema');assert.equal(sent.max_output_tokens,600);
+test('Workers AI is used without an API key and returned JSON is validated',async()=>{
+ let sent,selected;
+ const result=await handleRequest(req(),env(true,async(model,options)=>{selected=model;sent=options;return ai();}));
+ assert.equal(result.status,200);assert.deepEqual(await result.json(),{movie});assert.equal(selected,'@cf/meta/llama-3.1-8b-instruct-fp8');assert.equal(sent.response_format.type,'json_schema');assert.equal(sent.max_tokens,600);
  assert.equal(result.headers.get('Cache-Control'),'no-store');assert.equal(result.headers.get('Access-Control-Allow-Origin'),origin);
+ assert.equal((await handleRequest(req(),env(true,async()=>({response:movie})))).status,200);
 });
 test('quota exhaustion and quota failure prevent AI calls',async()=>{
  let calls=0;const provider=async()=>{calls++;return ai()};
- assert.equal((await handleRequest(req(),env(false),provider)).status,429);
- const broken=env();broken.MOVIE_QUOTA.get=()=>({fetch:async()=>{throw Error('offline')}});
- assert.equal((await handleRequest(req(),broken,provider)).status,503);assert.equal(calls,0);
+ assert.equal((await handleRequest(req(),env(false,provider))).status,429);
+ const broken=env(true,provider);broken.MOVIE_QUOTA.get=()=>({fetch:async()=>{throw Error('offline')}});
+ assert.equal((await handleRequest(req(),broken)).status,503);assert.equal(calls,0);
 });
-test('provider refusals, malformed JSON, incomplete responses and failure return controlled errors',async()=>{
- const outputs=[
-  [422,{status:'completed',output:[{type:'message',content:[{type:'refusal',refusal:'No'}]}]}],
-  [502,{status:'incomplete',output:[]}],
-  [502,{status:'completed',output:[{type:'message',content:[{type:'output_text',text:'invalid'}]}]}]
- ];
- for(const [status,body] of outputs)assert.equal((await handleRequest(req(),env(),async()=>Response.json(body))).status,status);
- const failed=await handleRequest(req(),env(),async()=>Response.json({error:'provider detail with test-key'},{status:500}));
- assert.equal(failed.status,502);assert.doesNotMatch(await failed.text(),/test-key|test-only/);
+test('invalid AI output and provider failure return controlled errors',async()=>{
+ for(const body of [{response:'invalid'},{response:{}},{response:{...movie,title:'x'.repeat(65)}}])assert.equal((await handleRequest(req(),env(true,async()=>body))).status,502);
+ const failed=await handleRequest(req(),env(true,async()=>{throw Error('private provider detail')}));
+ assert.equal(failed.status,502);assert.doesNotMatch(await failed.text(),/private provider detail/);
+});
+test('free daily allowance exhaustion returns 429 without a paid fallback',async()=>{
+ let calls=0;
+ const result=await handleRequest(req(),env(true,async()=>{calls++;throw Object.assign(Error('limit'),{code:3036});}));
+ assert.equal(result.status,429);assert.equal(calls,1);
 });
 test('durable quota enforces shared daily and per-client caps and rolls over',async()=>{
  const data=new Map();let queue=Promise.resolve();
