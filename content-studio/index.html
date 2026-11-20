@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Turn your business brief into a ready-to-use AI prompt for captions, carousels, reels and WhatsApp messages.">
+  <title>Content Studio · INVISDOM</title>
+  <link rel="stylesheet" href="studio.css">
+  <script type="module" src="studio.mjs"></script>
+</head>
+<body>
+  <header><a class="brand" href="../">✦ INVISDOM <span>/ CONTENT STUDIO</span></a><span class="badge">FREE PROMPT BUILDER</span></header>
+  <main>
+    <section class="intro"><p class="eyebrow">FROM A SMALL BRIEF TO A BIG IDEA</p><h1>Your next post<br>starts <em>here.</em></h1><p class="lede">Give your ideas a little direction. Build a tailored prompt for ChatGPT, then turn it into content worth sharing.</p><div class="steps"><span>1. Add your brief</span><span>2. Build your prompt</span><span>3. Create in ChatGPT</span></div></section>
+    <div class="workspace">
+      <form id="brief-form" class="card">
+        <div class="card-heading"><div><p class="eyebrow">THE INPUT</p><h2>What are we creating?</h2></div><button type="button" class="text-button" id="example">Try an example</button></div>
+        <fieldset><legend>Choose a format</legend><div class="formats">
+          <label><input type="radio" name="format" value="caption" checked><span>Caption</span></label>
+          <label><input type="radio" name="format" value="carousel"><span>Carousel</span></label>
+          <label><input type="radio" name="format" value="reel"><span>Reel script</span></label>
+          <label><input type="radio" name="format" value="whatsapp"><span>WhatsApp</span></label>
+        </div></fieldset>
+        <div class="pair"><label>Brand or business<input name="brand" required maxlength="160" placeholder="e.g. Your business name" autocomplete="organization"></label><label>Who is it for?<input name="audience" required maxlength="300" placeholder="e.g. Dubai business owners"></label></div>
+        <label>Topic and verified details<textarea name="brief" required maxlength="3000" rows="5" placeholder="What do you want to promote or explain? Add only confirmed details, offers and links."></textarea></label>
+        <div class="pair"><label>Tone<select name="tone"><option>Professional</option><option>Warm and friendly</option><option>Bold and energetic</option><option>Premium and elegant</option></select></label><label>Language<select name="language"><option>English</option><option>Arabic</option><option>English and Arabic</option></select></label></div>
+        <label>Call to action<input name="cta" required maxlength="500" placeholder="e.g. Message us to arrange a tour"></label>
+        <button type="submit" class="primary">Build my AI prompt</button>
+        <p class="small">Your brief stays in this page. Nothing is sent to an AI service automatically. Avoid adding confidential information.</p>
+      </form>
+      <section class="card output-card" aria-labelledby="output-heading">
+        <div class="card-heading"><div><p class="eyebrow">THE STARTING POINT</p><h2 id="output-heading">Your creative direction</h2></div><span class="spark">✦</span></div>
+        <div id="empty"><div class="empty-art" aria-hidden="true">✳</div><h3>A good brief makes better content.</h3><p>Fill in the details or try the example. Your tailored AI prompt will appear here.</p><div class="note">This tool builds prompts locally. ChatGPT generates the final content when you paste your prompt there.</div></div>
+        <label id="result-label" hidden>Ready-to-use prompt<textarea id="result" rows="18" readonly></textarea></label>
+        <div id="actions" hidden><button type="button" class="primary" id="copy">Copy prompt</button><a class="secondary" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">Open ChatGPT</a><p class="small">Copy the prompt, open ChatGPT and paste it into a new chat. Review the generated content before publishing.</p><button type="button" class="text-button" id="download">Download prompt (.txt)</button></div>
+        <p id="status" role="status" aria-live="polite"></p>
+      </section>
+    </div>
+  </main><footer>Made for everyday ideas. Created by Mohamed Ashif · INVISDOM</footer>
+</body></html>
